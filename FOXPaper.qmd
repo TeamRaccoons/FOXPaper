@@ -1,0 +1,92 @@
+---
+title: "Floating Odds eXchange"
+format:
+   pdf:
+     documentclass: article
+---
+
+# Abstract
+
+This new model for tokenising odds allows traders to have more control over and more freedom when buying odds. In this model, traders can acquire tokens not just from our contract, but also from external AMMs and order books to participate.
+
+# Overview
+
+In this model, the market starts with 2 tokens representing both sides (Yes and No) of the market where traders can mint the side they want to buy using USDC. The price to mint each token is based on a formula which uses the supplies of both tokens. At the start of a market, the market creator first has to provide liquidity by buying tokens. They mint the first tokens from the market and set the initial supply and price for both Y and N. 
+
+The formula always ensures the minting price of a token is based on the demand of the token relative to the demand of the opposing token. The formula uses the amount of tokens minted / total supply of both tokens to quote a price. Thus the formula ensures that when the demand of token Y increases, its mint price will increase and the mint price of N will decrease.
+
+The price of each token is given in this formula 
+$P_{y}=\frac{S_{y}}{S_{y}+S_{n}}$ ,
+Where $S_{y}$ = Supply of Y, $S_{n}$ = Supply of N, $P_{n}$ = Price of Y
+
+The price of N also uses the same general formula:
+$P_{n}=\frac{S_{n}}{S_{n}+S_{y}}$ ,
+This formula ensures that the sum of Py and Pn will also always be 1 USDC
+
+This formula creates a bonding curve that looks like this:
+The horizontal axis is the supply of the token and the vertical axis is the price of the token in USDC and the supply of the opposing token is a constant
+
+![](images/graph1.png)
+
+After the market has been resolved, all the USDC collected in the pot will be split amongst the winners and the winning tokens can be traded in for their portion of the pot
+
+This is the overview on how the system works
+
+![](images/diagram.png)
+
+
+# Calculating the cost of buying tokens:
+
+When buying tokens, the cost of the tokens is calculated by calculating the area under the graph / integral of the curve.
+This is the formula used to calculate price where $S_{n}$ and $S_{y}$ are the supply of N and Y. $S_{n0}$ is the initial supply and $S_{n1}$ is the final supply.
+
+$\int_{S_{n0}}^{S_{n1}}\frac{S_{n}}{S_{n}+S_{y}}dS_{n}=\left[S_{n}-S_{y}\ln(S_{n}+S_{y})\right]_{S_{n0}}^{S_{n1}}$
+
+In this case, $S_{y}$ is a constant as the supply of Y remains the same during the transaction. The price of the tokens is the area under the graph from $S_{n0}$ to $S_{n1}$.
+
+Traders can then put their tokens on other markets like on AMMs or on order books and through Jupiter, all the markets will be aggregated to get the best price. Traders can sell their tokens off on external markets if they buy the token at worse odds, where the token is cheaper. Thus, they can make a profit early.
+
+# Creating a market
+
+When the market is being created by the creator, the creator can choose to set a creator fee which is charged during trades and will also have to first put in liquidity by buying tokens from both sides of the market. They can choose how much of each token to buy, which will affect the depth of the liquidity of the market. The cost of seeding liquidity uses the same formula as buying the tokens as a trader. The cost of minting the initial tokens will first calculate the cost of the token minted
+
+As the market creator, if they choose to seed more liquidity, there will be a smaller price impact for subsequent trades. However, by seeding more liquidity, the creator is taking on more risk and can potentially make a loss. For example, if they choose to seed heavily towards the side that lost, they will make a loss. If the market creator doesn’t put enough liquidity, the pool will have too little liquidity at the start and traders cannot make big trades without causing a huge price impact, causing the market to move slowly. 
+
+Thus, creators will have to estimate the amount of activity the pool will have, the estimated amount of fees they will get and decide on how much they are willing to seed.
+
+# Oracles and Resolving Markets
+
+The oracles that resolve the market are set by the creators, or the address set by the creator. The oracle can either return Yes, No or Inconclusive.
+
+When the result is Yes or No, the winners will be able to claim their share of the pot.
+In the case where the result is inconclusive, the pot will be split amongst all token holders of both sides. Consequently, many traders who buy either side may make a loss, creating a less than ideal situation. However this is currently the only solution so far to such a problem.
+
+
+# Example
+A trader wants to mint 100 token N from the contract. The supply of N and Y is 500 and 1000 respectively.
+The price to mint the tokens are:
+$\int_{500}^{600}\frac{S_{n}}{S_{n}+1000}dS_{n}=\left[S_{n}-1000\ln(S_{n}+1000)\right]_{500}^{600}\approx35.46$
+
+The price is calculated using the area under the bonding curve where Y is constant
+
+![](images/graph2.png)
+
+Since N is the token with less demand(fewer N has been minted than Y) here, it is sold for cheaper at 0.3546 USDC per token
+
+# Step by step from creation to resolving
+
+Example: Will Meow flip 2 heads
+
+1. The market creator creates the market and mints the two tokens Y (yes) and N (no) for a price at a ratio they see fit. They can also set a creator fee that they will get at the end. The market is then opened to traders which can mint from the contract.
+In this case, the creator decides to seed 350 Y and 650 N which will cost 525.16 USDC based on the formula. This funds will then go into the pot.
+
+2. Traders will then mint from the market if they believe that the potential payout and the probability of winning is worth the price of the token. 
+In this example, traders bought 600 more Y and 2100 more X, bringing the pot up to 1940.25 USDC.
+
+3. As traders mint more and more tokens, more fees are collected which goes to the market creator and platform. Thus, the market creator is incentivised to promote their market in order to earn more from fees. Here, the market creator sets the fee to 1%
+and will earn 19.40 from fees.
+
+4. Traders can open pools on other platforms, where they can also trade the tokens while Jupiter finds the best route to buy tokens. Traders who buy the tokens at a lower price can also cash out early by selling their tokens into the external pools.
+
+5. The market is then closed after a set time and after the oracle returns with the winning side, the market resolves and the side with the winning tokens can claim their portion. If Y wins, the payout per token will thus be 2.04 USDC, while the N 
+payout will be 0.79 USDC
